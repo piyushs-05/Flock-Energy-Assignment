@@ -10,6 +10,13 @@ Urja Meter API is a Node.js service built around these findings. It handles port
 
 This service covers login and logout, meter search (one page or all pages), attribute filters, nearby search, nameplate, location, readings, transformers, and signed metadata export. Stack: **Node.js 24, Express, Zod**, plus **OpenAPI 3.1 / Swagger UI**. Calls go to the live portal — no DB setup.
 
+**Hosted demo:** [https://api.piyushs.dev](https://api.piyushs.dev)  
+Swagger UI: [https://api.piyushs.dev/docs](https://api.piyushs.dev/docs) · Health: [https://api.piyushs.dev/health](https://api.piyushs.dev/health)
+
+Use your own Urja credentials at login. The demo talks to the real portal; free-tier hosts may cold-start slowly after idle time.
+
+### Run locally
+
 You need Node.js 24, npm, and a valid Urja account. From the project folder:
 
 ```
@@ -17,13 +24,13 @@ npm ci
 npm start
 ```
 
-The server starts at `http://127.0.0.1:3000` by default. Open [Swagger UI](http://127.0.0.1:3000/docs), or follow the request examples below. `GET /health` checks that the service is running; it does not check Urja's availability. Optional settings are listed under [Configuration](#configuration).
+The server starts at `http://127.0.0.1:3000` by default. Open [Swagger UI](http://127.0.0.1:3000/docs), or follow the request examples below (swap the host for `https://api.piyushs.dev` when calling the demo). `GET /health` checks that the service is running; it does not check Urja's availability. Optional settings are listed under [Configuration](#configuration).
 
 ## Using the API
 
-Replace `YOUR_EMAIL` / `YOUR_PASSWORD` with your Urja login. JSON examples below are from a **live capture** against Urja on 30 October 2026 (`request_id` / `fetched_at` stripped). IDs, counts, and readings can change. Full capture: [LIVE_ENDPOINT_OUTPUTS.md](./LIVE_ENDPOINT_OUTPUTS.md).
+Replace `YOUR_EMAIL` / `YOUR_PASSWORD` with your Urja login. Base URL in the curl samples is local; against the demo use `https://api.piyushs.dev` instead. JSON examples below are from a live capture against Urja (`request_id` / `fetched_at` stripped). IDs, counts, and readings can change.
 
-You can also try everything in [Swagger UI](http://127.0.0.1:3000/docs). Full field list is in [openapi.json](./openapi.json).
+Try the grouped endpoints in [Swagger on the demo](https://api.piyushs.dev/docs) (Auth, Search, Meters, Query, Transformers, Service) or locally at [http://127.0.0.1:3000/docs](http://127.0.0.1:3000/docs). Full field list is in [openapi.json](./openapi.json).
 
 | Method | Path                                  | What it does                            |
 | ------ | ------------------------------------- | --------------------------------------- |

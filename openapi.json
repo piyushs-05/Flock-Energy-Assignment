@@ -7,7 +7,12 @@
   },
   "servers": [
     {
-      "url": "/"
+      "url": "https://api.piyushs.dev",
+      "description": "Hosted demo"
+    },
+    {
+      "url": "/",
+      "description": "This server (local or current host)"
     }
   ],
   "tags": [
