@@ -10,6 +10,32 @@
       "url": "/"
     }
   ],
+  "tags": [
+    {
+      "name": "Auth",
+      "description": "Login and logout using Urja session credentials."
+    },
+    {
+      "name": "Search",
+      "description": "Portal meter search by ID or serial (paginated or all pages)."
+    },
+    {
+      "name": "Meters",
+      "description": "Single-meter nameplate, location, readings, overview, and signed export."
+    },
+    {
+      "name": "Query",
+      "description": "Export-backed attribute filters and nearby search."
+    },
+    {
+      "name": "Transformers",
+      "description": "Transformer catalogue, assigned meters, and inventory summary."
+    },
+    {
+      "name": "Service",
+      "description": "Health and operational checks."
+    }
+  ],
   "paths": {
     "/api/v1/auth/login": {
       "post": {
@@ -147,7 +173,7 @@
             },
             "headers": {
               "Retry-After": {
-                "description": "For PORTAL_RATE_LIMITED, a valid upstream hint bounded to 1–60 seconds. Omitted for invalid hints.",
+                "description": "For PORTAL_RATE_LIMITED, a valid upstream hint bounded to 1\u201360 seconds. Omitted for invalid hints.",
                 "schema": {
                   "type": "integer",
                   "minimum": 1,
@@ -166,7 +192,10 @@
               }
             }
           }
-        }
+        },
+        "tags": [
+          "Auth"
+        ]
       }
     },
     "/api/v1/auth/logout": {
@@ -270,7 +299,10 @@
               }
             }
           }
-        }
+        },
+        "tags": [
+          "Auth"
+        ]
       }
     },
     "/api/v1/meters": {
@@ -394,7 +426,7 @@
             },
             "headers": {
               "Retry-After": {
-                "description": "For PORTAL_RATE_LIMITED, a valid upstream hint bounded to 1–60 seconds. Omitted for invalid hints.",
+                "description": "For PORTAL_RATE_LIMITED, a valid upstream hint bounded to 1\u201360 seconds. Omitted for invalid hints.",
                 "schema": {
                   "type": "integer",
                   "minimum": 1,
@@ -413,7 +445,10 @@
               }
             }
           }
-        }
+        },
+        "tags": [
+          "Search"
+        ]
       }
     },
     "/api/v1/meters/all": {
@@ -528,7 +563,7 @@
             },
             "headers": {
               "Retry-After": {
-                "description": "For PORTAL_RATE_LIMITED, a valid upstream hint bounded to 1–60 seconds. Omitted for invalid hints.",
+                "description": "For PORTAL_RATE_LIMITED, a valid upstream hint bounded to 1\u201360 seconds. Omitted for invalid hints.",
                 "schema": {
                   "type": "integer",
                   "minimum": 1,
@@ -547,7 +582,10 @@
               }
             }
           }
-        }
+        },
+        "tags": [
+          "Search"
+        ]
       }
     },
     "/health": {
@@ -566,7 +604,9 @@
                       "const": "ok"
                     }
                   },
-                  "required": ["status"]
+                  "required": [
+                    "status"
+                  ]
                 }
               }
             },
@@ -590,7 +630,10 @@
               }
             }
           }
-        }
+        },
+        "tags": [
+          "Service"
+        ]
       }
     },
     "/api/v1/meters/{meter_id}": {
@@ -715,7 +758,7 @@
             },
             "headers": {
               "Retry-After": {
-                "description": "For PORTAL_RATE_LIMITED, a valid upstream hint bounded to 1–60 seconds. Omitted for invalid hints.",
+                "description": "For PORTAL_RATE_LIMITED, a valid upstream hint bounded to 1\u201360 seconds. Omitted for invalid hints.",
                 "schema": {
                   "type": "integer",
                   "minimum": 1,
@@ -734,7 +777,10 @@
               }
             }
           }
-        }
+        },
+        "tags": [
+          "Meters"
+        ]
       }
     },
     "/api/v1/meters/{meter_id}/location": {
@@ -859,7 +905,7 @@
             },
             "headers": {
               "Retry-After": {
-                "description": "For PORTAL_RATE_LIMITED, a valid upstream hint bounded to 1–60 seconds. Omitted for invalid hints.",
+                "description": "For PORTAL_RATE_LIMITED, a valid upstream hint bounded to 1\u201360 seconds. Omitted for invalid hints.",
                 "schema": {
                   "type": "integer",
                   "minimum": 1,
@@ -878,7 +924,10 @@
               }
             }
           }
-        }
+        },
+        "tags": [
+          "Meters"
+        ]
       }
     },
     "/api/v1/meters/{meter_id}/readings": {
@@ -1019,7 +1068,7 @@
             },
             "headers": {
               "Retry-After": {
-                "description": "For PORTAL_RATE_LIMITED, a valid upstream hint bounded to 1–60 seconds. Omitted for invalid hints.",
+                "description": "For PORTAL_RATE_LIMITED, a valid upstream hint bounded to 1\u201360 seconds. Omitted for invalid hints.",
                 "schema": {
                   "type": "integer",
                   "minimum": 1,
@@ -1038,7 +1087,10 @@
               }
             }
           }
-        }
+        },
+        "tags": [
+          "Meters"
+        ]
       }
     },
     "/api/v1/transformers": {
@@ -1154,7 +1206,7 @@
             },
             "headers": {
               "Retry-After": {
-                "description": "For PORTAL_RATE_LIMITED, a valid upstream hint bounded to 1–60 seconds. Omitted for invalid hints.",
+                "description": "For PORTAL_RATE_LIMITED, a valid upstream hint bounded to 1\u201360 seconds. Omitted for invalid hints.",
                 "schema": {
                   "type": "integer",
                   "minimum": 1,
@@ -1173,7 +1225,10 @@
               }
             }
           }
-        }
+        },
+        "tags": [
+          "Transformers"
+        ]
       }
     },
     "/api/v1/meters/export": {
@@ -1277,7 +1332,7 @@
             },
             "headers": {
               "Retry-After": {
-                "description": "For PORTAL_RATE_LIMITED, a valid upstream hint bounded to 1–60 seconds. Omitted for invalid hints.",
+                "description": "For PORTAL_RATE_LIMITED, a valid upstream hint bounded to 1\u201360 seconds. Omitted for invalid hints.",
                 "schema": {
                   "type": "integer",
                   "minimum": 1,
@@ -1296,7 +1351,10 @@
               }
             }
           }
-        }
+        },
+        "tags": [
+          "Meters"
+        ]
       }
     },
     "/api/v1/meters/query": {
@@ -1315,7 +1373,12 @@
             "in": "query",
             "schema": {
               "type": "string",
-              "enum": ["installed", "faulty", "decommissioned", "unknown"]
+              "enum": [
+                "installed",
+                "faulty",
+                "decommissioned",
+                "unknown"
+              ]
             }
           },
           {
@@ -1323,7 +1386,11 @@
             "in": "query",
             "schema": {
               "type": "string",
-              "enum": ["single", "three", "unknown"]
+              "enum": [
+                "single",
+                "three",
+                "unknown"
+              ]
             }
           },
           {
@@ -1346,7 +1413,11 @@
             "in": "query",
             "schema": {
               "type": "string",
-              "enum": ["ct_operated", "whole_current", "unknown"]
+              "enum": [
+                "ct_operated",
+                "whole_current",
+                "unknown"
+              ]
             }
           },
           {
@@ -1480,7 +1551,10 @@
               }
             }
           }
-        }
+        },
+        "tags": [
+          "Query"
+        ]
       }
     },
     "/api/v1/meters/nearby": {
@@ -1645,7 +1719,10 @@
               }
             }
           }
-        }
+        },
+        "tags": [
+          "Query"
+        ]
       }
     },
     "/api/v1/meters/{meter_id}/overview": {
@@ -1779,7 +1856,10 @@
               }
             }
           }
-        }
+        },
+        "tags": [
+          "Meters"
+        ]
       }
     },
     "/api/v1/transformers/{transformer_code}/meters": {
@@ -1807,7 +1887,12 @@
             "in": "query",
             "schema": {
               "type": "string",
-              "enum": ["installed", "faulty", "decommissioned", "unknown"]
+              "enum": [
+                "installed",
+                "faulty",
+                "decommissioned",
+                "unknown"
+              ]
             }
           },
           {
@@ -1940,7 +2025,10 @@
               }
             }
           }
-        }
+        },
+        "tags": [
+          "Transformers"
+        ]
       }
     },
     "/api/v1/transformers/{transformer_code}/summary": {
@@ -2074,7 +2162,10 @@
               }
             }
           }
-        }
+        },
+        "tags": [
+          "Transformers"
+        ]
       }
     }
   },
@@ -2096,7 +2187,9 @@
             "format": "uuid"
           }
         },
-        "required": ["request_id"]
+        "required": [
+          "request_id"
+        ]
       },
       "Error": {
         "type": "object",
@@ -2111,13 +2204,19 @@
                 "type": "string"
               }
             },
-            "required": ["code", "message"]
+            "required": [
+              "code",
+              "message"
+            ]
           },
           "meta": {
             "$ref": "#/components/schemas/Meta"
           }
         },
-        "required": ["error", "meta"]
+        "required": [
+          "error",
+          "meta"
+        ]
       },
       "LoginInput": {
         "type": "object",
@@ -2135,7 +2234,10 @@
             "writeOnly": true
           }
         },
-        "required": ["email", "password"],
+        "required": [
+          "email",
+          "password"
+        ],
         "additionalProperties": false
       },
       "LoginResponse": {
@@ -2149,17 +2251,26 @@
                 "description": "Sensitive Urja session cookie value."
               },
               "expires_at": {
-                "type": ["string", "null"],
+                "type": [
+                  "string",
+                  "null"
+                ],
                 "format": "date-time"
               }
             },
-            "required": ["session_token", "expires_at"]
+            "required": [
+              "session_token",
+              "expires_at"
+            ]
           },
           "meta": {
             "$ref": "#/components/schemas/Meta"
           }
         },
-        "required": ["data", "meta"]
+        "required": [
+          "data",
+          "meta"
+        ]
       },
       "Meter": {
         "type": "object",
@@ -2175,11 +2286,20 @@
           },
           "phase_type": {
             "type": "string",
-            "enum": ["single", "three", "unknown"]
+            "enum": [
+              "single",
+              "three",
+              "unknown"
+            ]
           },
           "installation_status": {
             "type": "string",
-            "enum": ["installed", "faulty", "decommissioned", "unknown"]
+            "enum": [
+              "installed",
+              "faulty",
+              "decommissioned",
+              "unknown"
+            ]
           },
           "transformer_code": {
             "type": "string"
@@ -2252,7 +2372,11 @@
                           "type": "string"
                         }
                       },
-                      "required": ["code", "field", "message"]
+                      "required": [
+                        "code",
+                        "field",
+                        "message"
+                      ]
                     }
                   }
                 },
@@ -2268,7 +2392,10 @@
             ]
           }
         },
-        "required": ["data", "meta"]
+        "required": [
+          "data",
+          "meta"
+        ]
       },
       "SearchAllResponse": {
         "type": "object",
@@ -2328,7 +2455,11 @@
                           "type": "string"
                         }
                       },
-                      "required": ["code", "field", "message"]
+                      "required": [
+                        "code",
+                        "field",
+                        "message"
+                      ]
                     }
                   }
                 },
@@ -2344,7 +2475,10 @@
             ]
           }
         },
-        "required": ["data", "meta"]
+        "required": [
+          "data",
+          "meta"
+        ]
       },
       "Nameplate": {
         "type": "object",
@@ -2360,15 +2494,28 @@
           },
           "phase_type": {
             "type": "string",
-            "enum": ["single", "three", "unknown"]
+            "enum": [
+              "single",
+              "three",
+              "unknown"
+            ]
           },
           "installation_status": {
             "type": "string",
-            "enum": ["installed", "faulty", "decommissioned", "unknown"]
+            "enum": [
+              "installed",
+              "faulty",
+              "decommissioned",
+              "unknown"
+            ]
           },
           "installation_type": {
             "type": "string",
-            "enum": ["ct_operated", "whole_current", "unknown"]
+            "enum": [
+              "ct_operated",
+              "whole_current",
+              "unknown"
+            ]
           }
         },
         "required": [
@@ -2419,16 +2566,26 @@
                           "type": "string"
                         }
                       },
-                      "required": ["code", "field", "message"]
+                      "required": [
+                        "code",
+                        "field",
+                        "message"
+                      ]
                     }
                   }
                 },
-                "required": ["source", "fetched_at"]
+                "required": [
+                  "source",
+                  "fetched_at"
+                ]
               }
             ]
           }
         },
-        "required": ["data", "meta"]
+        "required": [
+          "data",
+          "meta"
+        ]
       },
       "HierarchyEntry": {
         "oneOf": [
@@ -2442,10 +2599,16 @@
                 "type": "string"
               },
               "code": {
-                "type": ["string", "null"]
+                "type": [
+                  "string",
+                  "null"
+                ]
               }
             },
-            "required": ["name", "code"]
+            "required": [
+              "name",
+              "code"
+            ]
           }
         ]
       },
@@ -2459,17 +2622,26 @@
             "type": "object",
             "properties": {
               "latitude": {
-                "type": ["number", "null"],
+                "type": [
+                  "number",
+                  "null"
+                ],
                 "minimum": -90,
                 "maximum": 90
               },
               "longitude": {
-                "type": ["number", "null"],
+                "type": [
+                  "number",
+                  "null"
+                ],
                 "minimum": -180,
                 "maximum": 180
               }
             },
-            "required": ["latitude", "longitude"]
+            "required": [
+              "latitude",
+              "longitude"
+            ]
           },
           "hierarchy": {
             "type": "object",
@@ -2507,7 +2679,11 @@
             ]
           }
         },
-        "required": ["meter_id", "coordinates", "hierarchy"]
+        "required": [
+          "meter_id",
+          "coordinates",
+          "hierarchy"
+        ]
       },
       "LocationResponse": {
         "type": "object",
@@ -2548,16 +2724,26 @@
                           "type": "string"
                         }
                       },
-                      "required": ["code", "field", "message"]
+                      "required": [
+                        "code",
+                        "field",
+                        "message"
+                      ]
                     }
                   }
                 },
-                "required": ["source", "fetched_at"]
+                "required": [
+                  "source",
+                  "fetched_at"
+                ]
               }
             ]
           }
         },
-        "required": ["data", "meta"]
+        "required": [
+          "data",
+          "meta"
+        ]
       },
       "LocalTimestamp": {
         "type": "string",
@@ -2630,7 +2816,11 @@
                           "type": "string"
                         }
                       },
-                      "required": ["code", "field", "message"]
+                      "required": [
+                        "code",
+                        "field",
+                        "message"
+                      ]
                     }
                   },
                   "meter_id": {
@@ -2677,7 +2867,10 @@
             ]
           }
         },
-        "required": ["data", "meta"]
+        "required": [
+          "data",
+          "meta"
+        ]
       },
       "Transformer": {
         "type": "object",
@@ -2696,7 +2889,12 @@
             "minimum": 0
           }
         },
-        "required": ["code", "name", "feeder_code", "capacity_kva"]
+        "required": [
+          "code",
+          "name",
+          "feeder_code",
+          "capacity_kva"
+        ]
       },
       "TransformersResponse": {
         "type": "object",
@@ -2740,7 +2938,11 @@
                           "type": "string"
                         }
                       },
-                      "required": ["code", "field", "message"]
+                      "required": [
+                        "code",
+                        "field",
+                        "message"
+                      ]
                     }
                   },
                   "page": {
@@ -2772,7 +2974,10 @@
             ]
           }
         },
-        "required": ["data", "meta"]
+        "required": [
+          "data",
+          "meta"
+        ]
       },
       "ExportMeter": {
         "type": "object",
@@ -2799,15 +3004,28 @@
           },
           "phase_type": {
             "type": "string",
-            "enum": ["single", "three", "unknown"]
+            "enum": [
+              "single",
+              "three",
+              "unknown"
+            ]
           },
           "installation_status": {
             "type": "string",
-            "enum": ["installed", "faulty", "decommissioned", "unknown"]
+            "enum": [
+              "installed",
+              "faulty",
+              "decommissioned",
+              "unknown"
+            ]
           },
           "installation_type": {
             "type": "string",
-            "enum": ["ct_operated", "whole_current", "unknown"]
+            "enum": [
+              "ct_operated",
+              "whole_current",
+              "unknown"
+            ]
           },
           "transformer_code": {
             "type": "string"
@@ -2816,17 +3034,26 @@
             "type": "object",
             "properties": {
               "latitude": {
-                "type": ["number", "null"],
+                "type": [
+                  "number",
+                  "null"
+                ],
                 "minimum": -90,
                 "maximum": 90
               },
               "longitude": {
-                "type": ["number", "null"],
+                "type": [
+                  "number",
+                  "null"
+                ],
                 "minimum": -180,
                 "maximum": 180
               }
             },
-            "required": ["latitude", "longitude"]
+            "required": [
+              "latitude",
+              "longitude"
+            ]
           },
           "hierarchy": {
             "type": "object",
@@ -2867,7 +3094,10 @@
       },
       "ExportResponse": {
         "type": "object",
-        "required": ["data", "meta"],
+        "required": [
+          "data",
+          "meta"
+        ],
         "properties": {
           "data": {
             "type": "array",
@@ -2883,7 +3113,12 @@
               },
               {
                 "type": "object",
-                "required": ["source", "fetched_at", "total", "returned_count"],
+                "required": [
+                  "source",
+                  "fetched_at",
+                  "total",
+                  "returned_count"
+                ],
                 "properties": {
                   "source": {
                     "const": "urja_portal"
@@ -2904,7 +3139,11 @@
                     "type": "array",
                     "items": {
                       "type": "object",
-                      "required": ["code", "field", "message"],
+                      "required": [
+                        "code",
+                        "field",
+                        "message"
+                      ],
                       "properties": {
                         "code": {
                           "type": "string"
@@ -2941,15 +3180,28 @@
           },
           "phase_type": {
             "type": "string",
-            "enum": ["single", "three", "unknown"]
+            "enum": [
+              "single",
+              "three",
+              "unknown"
+            ]
           },
           "installation_status": {
             "type": "string",
-            "enum": ["installed", "faulty", "decommissioned", "unknown"]
+            "enum": [
+              "installed",
+              "faulty",
+              "decommissioned",
+              "unknown"
+            ]
           },
           "installation_type": {
             "type": "string",
-            "enum": ["ct_operated", "whole_current", "unknown"]
+            "enum": [
+              "ct_operated",
+              "whole_current",
+              "unknown"
+            ]
           },
           "transformer_code": {
             "type": "string"
@@ -2958,13 +3210,22 @@
             "type": "object",
             "properties": {
               "latitude": {
-                "type": ["number", "null"]
+                "type": [
+                  "number",
+                  "null"
+                ]
               },
               "longitude": {
-                "type": ["number", "null"]
+                "type": [
+                  "number",
+                  "null"
+                ]
               }
             },
-            "required": ["latitude", "longitude"]
+            "required": [
+              "latitude",
+              "longitude"
+            ]
           }
         },
         "required": [
@@ -2991,7 +3252,9 @@
                 "minimum": 0
               }
             },
-            "required": ["distance_m"]
+            "required": [
+              "distance_m"
+            ]
           }
         ]
       },
@@ -3066,7 +3329,11 @@
                           "type": "string"
                         }
                       },
-                      "required": ["code", "field", "message"]
+                      "required": [
+                        "code",
+                        "field",
+                        "message"
+                      ]
                     }
                   }
                 },
@@ -3085,7 +3352,10 @@
             ]
           }
         },
-        "required": ["data", "meta"]
+        "required": [
+          "data",
+          "meta"
+        ]
       },
       "MeterNearbyResponse": {
         "type": "object",
@@ -3162,7 +3432,11 @@
                           "type": "string"
                         }
                       },
-                      "required": ["code", "field", "message"]
+                      "required": [
+                        "code",
+                        "field",
+                        "message"
+                      ]
                     }
                   }
                 },
@@ -3183,7 +3457,10 @@
             ]
           }
         },
-        "required": ["data", "meta"]
+        "required": [
+          "data",
+          "meta"
+        ]
       },
       "MeterOverviewResponse": {
         "type": "object",
@@ -3205,15 +3482,28 @@
                   },
                   "phase_type": {
                     "type": "string",
-                    "enum": ["single", "three", "unknown"]
+                    "enum": [
+                      "single",
+                      "three",
+                      "unknown"
+                    ]
                   },
                   "installation_status": {
                     "type": "string",
-                    "enum": ["installed", "faulty", "decommissioned", "unknown"]
+                    "enum": [
+                      "installed",
+                      "faulty",
+                      "decommissioned",
+                      "unknown"
+                    ]
                   },
                   "installation_type": {
                     "type": "string",
-                    "enum": ["ct_operated", "whole_current", "unknown"]
+                    "enum": [
+                      "ct_operated",
+                      "whole_current",
+                      "unknown"
+                    ]
                   }
                 },
                 "required": [
@@ -3231,36 +3521,57 @@
                     "type": "object",
                     "properties": {
                       "latitude": {
-                        "type": ["number", "null"]
+                        "type": [
+                          "number",
+                          "null"
+                        ]
                       },
                       "longitude": {
-                        "type": ["number", "null"]
+                        "type": [
+                          "number",
+                          "null"
+                        ]
                       }
                     },
-                    "required": ["latitude", "longitude"]
+                    "required": [
+                      "latitude",
+                      "longitude"
+                    ]
                   },
                   "hierarchy": {
                     "type": "object",
                     "additionalProperties": true
                   }
                 },
-                "required": ["coordinates", "hierarchy"]
+                "required": [
+                  "coordinates",
+                  "hierarchy"
+                ]
               },
               "readings_summary": {
                 "type": "object",
                 "properties": {
                   "available_from": {
-                    "type": ["string", "null"]
+                    "type": [
+                      "string",
+                      "null"
+                    ]
                   },
                   "available_to": {
-                    "type": ["string", "null"]
+                    "type": [
+                      "string",
+                      "null"
+                    ]
                   },
                   "reading_count": {
                     "type": "integer",
                     "minimum": 0
                   },
                   "timestamp_timezone": {
-                    "type": ["string", "null"]
+                    "type": [
+                      "string",
+                      "null"
+                    ]
                   },
                   "latest_readings": {
                     "type": "array",
@@ -3344,16 +3655,27 @@
                           "type": "string"
                         }
                       },
-                      "required": ["code", "field", "message"]
+                      "required": [
+                        "code",
+                        "field",
+                        "message"
+                      ]
                     }
                   }
                 },
-                "required": ["source", "fetched_at", "composite"]
+                "required": [
+                  "source",
+                  "fetched_at",
+                  "composite"
+                ]
               }
             ]
           }
         },
-        "required": ["data", "meta"]
+        "required": [
+          "data",
+          "meta"
+        ]
       },
       "TransformerMetersResponse": {
         "type": "object",
@@ -3433,7 +3755,11 @@
                           "type": "string"
                         }
                       },
-                      "required": ["code", "field", "message"]
+                      "required": [
+                        "code",
+                        "field",
+                        "message"
+                      ]
                     }
                   }
                 },
@@ -3454,7 +3780,10 @@
             ]
           }
         },
-        "required": ["data", "meta"]
+        "required": [
+          "data",
+          "meta"
+        ]
       },
       "TransformerSummaryResponse": {
         "type": "object",
@@ -3489,7 +3818,12 @@
                     "minimum": 0
                   }
                 },
-                "required": ["installed", "faulty", "decommissioned", "unknown"]
+                "required": [
+                  "installed",
+                  "faulty",
+                  "decommissioned",
+                  "unknown"
+                ]
               },
               "by_phase_type": {
                 "type": "object",
@@ -3507,7 +3841,11 @@
                     "minimum": 0
                   }
                 },
-                "required": ["single", "three", "unknown"]
+                "required": [
+                  "single",
+                  "three",
+                  "unknown"
+                ]
               }
             },
             "required": [
@@ -3564,7 +3902,11 @@
                           "type": "string"
                         }
                       },
-                      "required": ["code", "field", "message"]
+                      "required": [
+                        "code",
+                        "field",
+                        "message"
+                      ]
                     }
                   }
                 },
@@ -3580,7 +3922,10 @@
             ]
           }
         },
-        "required": ["data", "meta"]
+        "required": [
+          "data",
+          "meta"
+        ]
       },
       "LogoutResponse": {
         "type": "object",
@@ -3593,13 +3938,18 @@
                 "const": true
               }
             },
-            "required": ["logged_out"]
+            "required": [
+              "logged_out"
+            ]
           },
           "meta": {
             "$ref": "#/components/schemas/Meta"
           }
         },
-        "required": ["data", "meta"]
+        "required": [
+          "data",
+          "meta"
+        ]
       }
     }
   }
