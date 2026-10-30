@@ -166,6 +166,24 @@ test("HTTP success and error responses conform to all public operation schemas",
       },
       warnings: [],
     }),
+    metersSummary: async () => ({
+      data: {
+        total_meters: 1,
+        by_installation_status: {
+          installed: 1,
+          faulty: 0,
+          decommissioned: 0,
+          unknown: 0,
+        },
+        by_phase_type: { single: 1, three: 0, unknown: 0 },
+        by_manufacturer: { Genus: 1 },
+      },
+      meta: {
+        query_mode: "export_summary",
+        snapshot_total: 1,
+      },
+      warnings: [],
+    }),
     overview: async () => ({
       data: {
         meter_id: "J1",
@@ -276,6 +294,7 @@ test("HTTP success and error responses conform to all public operation schemas",
       "/api/v1/meters/nearby?latitude=26.83&longitude=75.8&radius_m=1000",
       "/api/v1/meters/nearby",
     ],
+    ["/api/v1/meters/summary", "/api/v1/meters/summary"],
     ["/api/v1/meters/J1", "/api/v1/meters/{meter_id}"],
     ["/api/v1/meters/J1/overview", "/api/v1/meters/{meter_id}/overview"],
     ["/api/v1/meters/J1/location", "/api/v1/meters/{meter_id}/location"],

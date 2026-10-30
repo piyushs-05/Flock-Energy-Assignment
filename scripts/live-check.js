@@ -84,6 +84,7 @@ await check("OpenAPI lists all resource routes", "/openapi.json", 200, {
       "/api/v1/meters/export",
       "/api/v1/meters/query",
       "/api/v1/meters/nearby",
+      "/api/v1/meters/summary",
       "/api/v1/meters/{meter_id}",
       "/api/v1/meters/{meter_id}/overview",
       "/api/v1/meters/{meter_id}/location",
@@ -175,6 +176,28 @@ if (token) {
       },
     },
   );
+  await check("Fleet inventory summary counts", "/api/v1/meters/summary", 200, {
+    verify: (b) => {
+      assert.equal(b.meta.query_mode, "export_summary");
+      assert.ok(b.data.total_meters > 0);
+      assert.equal(b.data.total_meters, b.meta.snapshot_total);
+      const statusSum = Object.values(b.data.by_installation_status).reduce(
+        (a, n) => a + n,
+        0,
+      );
+      const phaseSum = Object.values(b.data.by_phase_type).reduce(
+        (a, n) => a + n,
+        0,
+      );
+      const makeSum = Object.values(b.data.by_manufacturer).reduce(
+        (a, n) => a + n,
+        0,
+      );
+      assert.equal(statusSum, b.data.total_meters);
+      assert.equal(phaseSum, b.data.total_meters);
+      assert.equal(makeSum, b.data.total_meters);
+    },
+  });
   await check("Search exact meter", "/api/v1/meters?q=J100007&page=1", 200, {
     verify: (b) => {
       assert.equal(b.data[0].meter_id, "J100007");

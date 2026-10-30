@@ -249,6 +249,47 @@ export function filterExportedMeters(exported, { filters, page, page_size }) {
   };
 }
 
+/** Fleet inventory counts from one validated export. One pass; each bucket sums to total. */
+export function summarizeExportedMeters(exported) {
+  const by_installation_status = {
+    installed: 0,
+    faulty: 0,
+    decommissioned: 0,
+    unknown: 0,
+  };
+  const by_phase_type = { single: 0, three: 0, unknown: 0 };
+  const by_manufacturer = {};
+  const entries = [];
+  for (let index = 0; index < exported.data.length; index++) {
+    const row = exported.data[index];
+    entries.push({ row, exportIndex: index });
+    const status = STATUS.has(row.installation_status)
+      ? row.installation_status
+      : "unknown";
+    const phase = PHASE.has(row.phase_type) ? row.phase_type : "unknown";
+    const manufacturer =
+      typeof row.manufacturer === "string" && row.manufacturer.trim()
+        ? row.manufacturer.trim()
+        : "unknown";
+    by_installation_status[status] += 1;
+    by_phase_type[phase] += 1;
+    by_manufacturer[manufacturer] = (by_manufacturer[manufacturer] || 0) + 1;
+  }
+  return {
+    data: {
+      total_meters: exported.data.length,
+      by_installation_status,
+      by_phase_type,
+      by_manufacturer,
+    },
+    warnings: remapExportWarnings(exported.warnings, entries),
+    meta: {
+      query_mode: "export_summary",
+      snapshot_total: exported.meta.total,
+    },
+  };
+}
+
 export function nearbyExportedMeters(
   exported,
   { latitude, longitude, radius_m, limit },

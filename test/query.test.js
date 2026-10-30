@@ -9,6 +9,7 @@ import {
   nearbyExportedMeters,
   parseMeterQuery,
   parseNearbyQuery,
+  summarizeExportedMeters,
 } from "../src/query.js";
 
 const sample = {
@@ -85,6 +86,32 @@ test("filterExportedMeters ANDs filters and paginates locally", () => {
   assert.equal(result.meta.snapshot_total, 3);
 });
 
+test("summarizeExportedMeters counts satisfy all three invariants", () => {
+  const result = summarizeExportedMeters(sample);
+  const { total_meters, by_installation_status, by_phase_type, by_manufacturer } =
+    result.data;
+  assert.equal(total_meters, 3);
+  assert.equal(
+    Object.values(by_installation_status).reduce((a, b) => a + b, 0),
+    total_meters,
+  );
+  assert.equal(
+    Object.values(by_phase_type).reduce((a, b) => a + b, 0),
+    total_meters,
+  );
+  assert.equal(
+    Object.values(by_manufacturer).reduce((a, b) => a + b, 0),
+    total_meters,
+  );
+  assert.equal(by_installation_status.faulty, 2);
+  assert.equal(by_installation_status.installed, 1);
+  assert.equal(by_phase_type.three, 2);
+  assert.equal(by_manufacturer.Genus, 2);
+  assert.equal(by_manufacturer.HPL, 1);
+  assert.equal(result.meta.query_mode, "export_summary");
+  assert.equal(result.meta.snapshot_total, 3);
+});
+
 test("nearby sorts by distance and reports missing coordinates", () => {
   assert.ok(distanceMeters(26.83, 75.8, 26.831, 75.801) < 200);
   const result = nearbyExportedMeters(sample, {
@@ -115,7 +142,7 @@ test("parseNearbyQuery validates coordinates and bounds", () => {
   assert.equal(parsed.limit, 50);
 });
 
-test("query and nearby routes use export snapshot and reject bad input", async () => {
+test("query, nearby, and summary routes use export snapshot and reject bad input", async () => {
   let exports = 0;
   const portal = {
     queryMeters: async (_token, query) => {
@@ -125,6 +152,10 @@ test("query and nearby routes use export snapshot and reject bad input", async (
     nearbyMeters: async (_token, query) => {
       exports += 1;
       return nearbyExportedMeters(sample, query);
+    },
+    metersSummary: async () => {
+      exports += 1;
+      return summarizeExportedMeters(sample);
     },
   };
   const app = createApp({ portal, logger: createLogger("silent") });
@@ -148,5 +179,16 @@ test("query and nearby routes use export snapshot and reject bad input", async (
     .expect(200);
   assert.equal(nearby.body.meta.excluded_missing_coordinates, 1);
   assert.ok(nearby.body.data[0].distance_m >= 0);
-  assert.equal(exports, 2);
+
+  const summary = await request(app)
+    .get("/api/v1/meters/summary")
+    .set("X-Urja-Session", "token")
+    .expect(200);
+  assert.equal(summary.body.data.total_meters, 3);
+  assert.equal(summary.body.meta.query_mode, "export_summary");
+  await request(app)
+    .get("/api/v1/meters/summary?extra=1")
+    .set("X-Urja-Session", "token")
+    .expect(400);
+  assert.equal(exports, 3);
 });

@@ -4,7 +4,11 @@ import { Cookie, CookieJar } from "tough-cookie";
 import { signExport, normalizeExport } from "./export.js";
 import { ApiError, invalidPortalResponse } from "./errors.js";
 import { normalizeSearch, SEARCH_ALL_MAX_ROWS } from "./search.js";
-import { filterExportedMeters, nearbyExportedMeters } from "./query.js";
+import {
+  filterExportedMeters,
+  nearbyExportedMeters,
+  summarizeExportedMeters,
+} from "./query.js";
 import {
   transformerMeterList,
   transformerSummaryFromExport,
@@ -432,6 +436,11 @@ export class PortalClient {
   async nearbyMeters(token, query, signal) {
     const exported = await this.exportMeters(token, signal);
     return nearbyExportedMeters(exported, query);
+  }
+
+  async metersSummary(token, signal) {
+    const exported = await this.exportMeters(token, signal);
+    return summarizeExportedMeters(exported);
   }
 
   async catalogueHasTransformer(token, code, signal) {

@@ -13,7 +13,7 @@ This service covers login and logout, meter search (one page or all pages), attr
 **Hosted demo:** [https://api.piyushs.dev](https://api.piyushs.dev)  
 Swagger UI: [https://api.piyushs.dev/docs](https://api.piyushs.dev/docs) · Health: [https://api.piyushs.dev/health](https://api.piyushs.dev/health)
 
-Use your own Urja credentials at login. The demo talks to the real portal; free-tier hosts may cold-start slowly after idle time.
+Use your own Urja credentials at login. The demo is on Render’s free tier: after idle time the service sleeps, so the **first request can take ~30–60 seconds** (or longer) while it spins up. Later requests are fast until it sleeps again. It is not shut down permanently — it wakes on the next visit. The demo talks to the real Urja portal.
 
 ### Run locally
 
@@ -40,6 +40,7 @@ Try the grouped endpoints in [Swagger on the demo](https://api.piyushs.dev/docs)
 | `GET`  | `/api/v1/meters/all`                  | Search meters (all pages combined)      |
 | `GET`  | `/api/v1/meters/query`                | Filter by status / phase / DT / etc.    |
 | `GET`  | `/api/v1/meters/nearby`               | Meters near a lat/lng                   |
+| `GET`  | `/api/v1/meters/summary`              | Fleet inventory counts (status/phase/make) |
 | `GET`  | `/api/v1/meters/{meter_id}`           | Nameplate details                       |
 | `GET`  | `/api/v1/meters/{meter_id}/overview`  | Nameplate + location + readings summary |
 | `GET`  | `/api/v1/meters/{meter_id}/location`  | Coordinates + network hierarchy         |
@@ -261,7 +262,7 @@ curl -sS 'http://127.0.0.1:3000/api/v1/meters/J100007/readings?from=2026-06-24T0
 
 - `from` / `to` format: `YYYY-MM-DDTHH:mm:ss` (no `Z`).
 - Both ends are included. `from` must be `<=` `to`.
-- Timezone is unknown, so `timestamp_timezone` is `null`.
+- For interpreting the readings, we assume IST (`Asia/Kolkata`, UTC+05:30). Urja did not provide a timezone, so this is an assumption; the API keeps `timestamp_timezone: null` and does not convert the source timestamps.
 - Filter only works on data Urja already returns.
 - Values look like running totals — we do not sum them as bill/consumption.
 - June dates above are from the live dataset. Change them if needed.
@@ -506,7 +507,51 @@ Also uses one export under the hood (`query_mode: "export_nearby"`).
 
 ---
 
-### 11. Meter overview
+### 11. Fleet inventory summary
+
+One export, then counts for a dashboard:
+
+```bash
+curl -sS 'http://127.0.0.1:3000/api/v1/meters/summary' \
+  -H "X-Urja-Session: $SESSION_TOKEN"
+```
+
+```json
+{
+  "data": {
+    "total_meters": 403,
+    "by_installation_status": {
+      "installed": 238,
+      "faulty": 90,
+      "decommissioned": 75,
+      "unknown": 0
+    },
+    "by_phase_type": {
+      "single": 277,
+      "three": 126,
+      "unknown": 0
+    },
+    "by_manufacturer": {
+      "HPL": 90,
+      "L&T": 64,
+      "Genus": 88,
+      "Allied": 76,
+      "Secure": 85
+    }
+  },
+  "meta": {
+    "source": "urja_portal",
+    "query_mode": "export_summary",
+    "snapshot_total": 403
+  }
+}
+```
+
+Counts above are from a live run (each breakdown sums to 403). No query parameters. Inventory only — not loading or health. Registered as a static path so `summary` is not treated as a meter ID.
+
+---
+
+### 12. Meter overview
 
 One call for the usual “open this meter” screen (nameplate + location + readings summary):
 
@@ -570,7 +615,7 @@ This is **not** an atomic snapshot; timezone stays unknown. Empty energy → `re
 
 ---
 
-### 12. Transformer meters and summary
+### 13. Transformer meters and summary
 
 ```bash
 curl -sS 'http://127.0.0.1:3000/api/v1/transformers/DT-008/meters?page=1&page_size=5' \
@@ -663,7 +708,7 @@ Inventory summary:
 
 ---
 
-### 13. Logout
+### 14. Logout
 
 This calls Urja's sign-out endpoint and revokes the current session:
 
@@ -683,7 +728,7 @@ curl -sS -X POST 'http://127.0.0.1:3000/api/v1/auth/logout' \
 }
 ```
 
-The API returns success only after Urja confirms logout and clears its main session cookie. After that, protected routes reject the old session. Calling logout again with an already-revoked value may still return success (Urja's sign-out looked idempotent in live checks).
+The API returns success only after Urja confirms logout and clears its main session cookie. After that, protected routes reject the old session.
 
 ---
 
@@ -695,7 +740,7 @@ In testing, the same value worked as a cookie and was rejected as `Authorization
 
 Each resource request gets its own cookie jar. Portal calls for that request share the jar, timeout, and retry budget. Clients are not shared across callers. Credentials, session values, and export signing secrets are not logged.
 
-Logout forwards the session to Urja's sign-out and succeeds only when Urja reports success and clears the main session cookie. After that, the old value is rejected on protected routes. Calling logout again with an already-revoked value may still return success (Urja's sign-out looked idempotent in live checks). Details are in [PROTOCOL.md](./PROTOCOL.md).
+Logout forwards the session to Urja's sign-out and succeeds only when Urja reports success and clears the main session cookie. After that, the old value is rejected on protected routes. Details are in [PROTOCOL.md](./PROTOCOL.md).
 
 ## Architecture
 
@@ -801,7 +846,7 @@ Our login throttle is `429`. Urja rate-limiting the portal is `503 PORTAL_RATE_L
 
 | Variable | Default | Purpose |
 | --- | --- | --- |
-| `HOST` | `127.0.0.1` locally; `0.0.0.0` when `server` is set | Bind address |
+| `HOST` | `127.0.0.1` locally; `0.0.0.0` on Render | Bind address |
 | `PORT` | `3000` | HTTP port |
 | `TRUST_PROXY` | `false` locally; `true` on Render | Trust `X-Forwarded-*` (login rate limit) |
 | `PORTAL_ORIGIN` | `https://urja-ops.flockenergy.tech` | HTTPS origin only (no path, query, or embedded credentials) |
@@ -874,56 +919,69 @@ scripts/                        # OpenAPI check and live smoke
 openapi.json                    # API contract
 ```
 
-## Known limitations and future work
+## What I found while exploring Urja
 
-### Limits of this version
+- **Meter details have two formats.** Some responses contain a parameter list, while others contain nested JSON inside `classData`. Both are inside SvelteKit's indexed response. The API handles both formats, and automated tests check that they produce the same fields. A new format would need another decoder update.
+- **Network data has gaps and different names.** For example, DT-007 had different names in the meter hierarchy and transformer list. The API keeps the source names and reports missing values through warnings. It does not choose one name as the correct one without evidence.
+- **The export gave us more than the search list.** In live testing, export `page=1` returned all 403 meter records, including hierarchy and coordinates. The API checks the returned count and rejects incomplete or duplicate records. This was tested with the current dataset; export pagination for a larger dataset has not been verified.
+- **Readings need some care.** J100007 returned 337 readings in the live test. Sorting and inclusive date filters were checked. Since Urja did not provide a timezone, we assume IST when interpreting these readings, but keep the API timezone field as `null` because it is not confirmed by the source. The energy values appear to be cumulative readings. Calculating daily usage or bills would also need confirmed rules for meter resets and units.
+- **Filters currently fetch the dataset again on each request.** Status filters, nearby search, and transformer inventory use a fresh export in memory. This keeps the flow simple, but repeated requests repeat the export work. There is no saved index or response cache yet.
 
-- Portal routes and payloads were learned by observation. Urja can change shapes or auth without notice; this adapter would need updates.
-- Long-running session expiry, concurrent logins for one account, multi-session logout scope, signing-key rotation, and signature timestamp tolerance are only lightly checked. Offline mocks do not replace those portal lifecycle checks.
-- Export `page=1` returned the full dataset in testing. The API checks completeness and does **not** invent further export pages. Larger datasets may need streaming or real pagination only after the portal is shown to support them.
-- Queue and login limits are **per process**. Several instances would need shared throttling.
-- Local bind defaults to loopback; Render (`RENDER` set) binds `0.0.0.0`. Public hosting still needs HTTPS (Render provides it), a deployment auth review, and an explicit CORS policy if browsers on other origins call the API (CORS alone is not access control).
-- Attribute filters and nearby search already run on a **fresh export in memory**. There is still no durable local index, response cache, global hierarchy tree, or product UI — Swagger documents the API; it is not a meter dashboard.
-- Readings keep source registers and an unknown timezone. Interval / billable energy is out of scope until cumulative-register rules are defined.
+### What I would improve next
 
-### Sensible next steps
+1. **Save a searchable meter snapshot.** Store a validated export in SQLite so filters and nearby searches can use it without downloading all meters each time. Refresh it on a fixed schedule and show when it was last updated. If a refresh fails, keep the previous complete snapshot and clearly show its age. Saved data should remain available only to users who are allowed to access it.
+2. **Add caching for repeated lookups.** Keep frequently requested meter details for a short, configurable time. Return the original fetch time so callers can see how old the data is. Before serving cached data, check that the caller's Urja session is still valid. Start with one resource and measure whether it reduces repeated portal calls.
+3. **Make network browsing easier.** Add endpoints to list zones, feeders, and their transformers using the export data. Keep missing levels and alternate names visible. This would help callers browse the network without building the hierarchy themselves.
+4. **Multi-session login.** Check how Urja handles the same account logged in on multiple devices, including whether logging out on one device affects the others.
+5. **Add a small web interface and automatic checks.** A basic page could provide login, search, meter overview, and a readings chart. Separately, add GitHub Actions to run tests, lint, formatting, and OpenAPI validation on each push.
 
-1. **Durable export index** — Persist a validated export (for example SQLite), refresh atomically, and serve combined filters / nearby from the snapshot with visible `fetched_at` / snapshot id. Decide first whether snapshots are shared across any valid session or scoped to a principal; a shared DB must not widen Urja’s access model by accident.
-2. **Caching** — Bounded in-memory cache of normalized responses only (never credentials or signing secrets). Pick a session-revalidation rule before shipping hits: check Urja on protected cache hits, or document a short trust window. Keep `fetched_at` as source retrieval time, not cache-read time.
-3. **Network hierarchy API** — Build zone → … → transformer from export rows, keep aliases and missing codes honest, and optionally expose data-quality summaries (gaps, conflicts, missing coordinates).
-4. **Small web client** — Same-origin login, search, detail, and readings with clear loading/empty/error/warning states. Map and tree views can follow once the basic flow works.
-5. **Ops / scale (only if deploying)** — Shared limits across instances, readiness/drain, sanitized metrics (no secrets or meter IDs as labels), and CI for `npm ci`, tests, lint, format, and OpenAPI. Keep live-account smoke opt-in.
-
-Do one optional track at a time: index **or** hierarchy first, then cache if repeated fetch cost warrants it, then UI.
+I would start with the saved meter snapshot because several existing endpoints already depend on export. If the service later runs on multiple instances, the queue and login limits would also need to be coordinated; currently each process keeps its own limits.
 
 ## Reflection
 
 ### What assumptions did you make?
 
-I started with browser requests as the integration source. I wanted to reuse Urja's login instead of creating a separate user system for this assignment. Cookie-only access was then checked against the resource endpoints. For readings, the implementation preserves the values and leaves the timezone unknown because there was not enough evidence to define either timezone or interval consumption.
+- **Timezone:** I assume IST when interpreting the readings because the utility data is from Jaipur. Urja does not state a timezone, so the API preserves the original timestamps and returns `timestamp_timezone: null`.
+- **Energy readings:** The increasing kWh and kVAh values appear to be cumulative readings. Reset and rollover rules are not confirmed, so the API does not calculate interval consumption or bills.
+- **Transformer identity:** I use transformer codes to link meters with transformers. If the same code has different names, the API keeps the source names rather than treating them as separate transformers.
+- **Installation status:** I treat `installed`, `faulty`, and `decommissioned` as inventory labels. They do not establish whether a meter is currently online or whether its readings are correct.
+- **Data during multiple calls:** Search across pages and meter overview use several portal calls. I assume the data stays reasonably stable while these calls run. The API checks for some inconsistencies, but cannot guarantee that every response represents the same point in time.
+
+#### Assumptions later verified
+
+- **Session reuse** - I initially expected the portal session cookie to be enough for resource access. Requests using only that cookie succeeded, while sending the same value only as a Bearer token returned 401.
+- **Complete export** - I initially expected the export to provide all meter metadata together. The live export returned 403 records with a matching total, and the API checks completeness and duplicate IDs. This was verified for the current dataset.
 
 ### Which part was the most difficult, and how did you get unstuck?
 
-The main difficulty was understanding meter detail responses. The same route could return legacy parameter lists or nested JSON, both inside SvelteKit's indexed format. Comparing installed, faulty, and decommissioned meters helped clarify that `installed_meter` is a payload key, not a check for installation status. The decoder selects data by its content rather than assuming a fixed node index.
+The most difficult part was understanding why meter details were coming in different formats. Some meters returned a parameter list, while others returned nested JSON inside `classData`. Both were inside SvelteKit's indexed response, so reading the response directly was confusing.
+
+I compared responses from several meters with different installation statuses in Chrome DevTools. This helped me understand that the format should be identified from the response structure, rather than guessed from the meter's status. For example, `installed_meter` also appeared for a decommissioned meter, so the name did not mean the meter was installed.
+
+Based on these observations, the decoder handles both formats and converts them into the same API response.
 
 ### If you had another day, what would you improve?
 
-I would first verify setup from a fresh clone and finish the documentation review. After that, I would start a durable export index for heavier filter/nearby workloads, and settle authorization plus snapshot freshness before adding caching.
+I would first add a short-lived cache for the validated meter export. Status filters, nearby search, and transformer summaries currently fetch the export separately on every request. Reusing a recent export would reduce repeated portal calls. The response would show when the data was fetched, and callers could request a refresh when needed. Cached data would still require a valid Urja session, with entries kept separate between sessions.
+
+I would also add a data-quality endpoint to help operations staff find records that need checking. It could list meters with missing coordinates or incomplete network details, and group conflicting transformer names under the same code. Each result would include the affected meter or transformer code and the reason it was flagged. Callers could filter by issue type and get a paginated list, instead of downloading the full export and finding these problems themselves. This would build on the source-data warnings already available in the API.
 
 ### What mistake did you make while solving this?
 
 I first assumed the portal session value could be reused as `Authorization: Bearer ...`, because that is a common API pattern and looked cleaner than copying a cookie. A protected search with only that header returned 401. Sending the same value as the `__Secure-better-auth.session_token` cookie worked. That pushed the design to `X-Urja-Session`: callers pass the cookie value in a header, and the adapter attaches it as a cookie on portal requests.
 
-I also assumed session security could wait until later. Talking through cache access and logout made it clear that “who holds a valid Urja session” is part of the design even in this first version, which is why logout now goes through Urja's sign-out instead of only clearing a local variable.
+I also missed logout in the initial endpoint list. At first, the flow covered getting a session and using it, but not ending it. Clearing a local token would still leave the Urja session active. I added logout after checking the portal's sign-out request and verified that the old session was rejected afterward.
 
 ### If you were reviewing your own submission, what would you criticise?
 
-The service still depends on an undocumented portal interface, and real session expiry needs more investigation. Some transport and error-handling code is also quite detailed for a small assignment. I would check whether each piece has a clear reason and whether the documentation makes the remaining gaps easy to understand.
+I would review how much work the API removes for another developer. Normalizing the portal responses is useful, but callers should also be able to complete common tasks without rebuilding the same logic. The meter overview combines details, location, and recent-reading information, while attribute filters, nearby search, and transformer summaries support practical inspection and inventory tasks.
+
+My criticism would be that some useful responses still require downloading the full export internally on every request. Before adding more endpoints, I would measure response times and portal calls, then improve how existing endpoints share recently fetched data. I would also check that pagination, warnings, and freshness information are clear enough for a developer to use the results correctly. The next endpoints should come from real user tasks, such as finding incomplete meter records, rather than adding more ways to return the same data.
 
 ### Development assistance
 
-I explored portal behaviour in Chrome DevTools, shared response samples, and chose Node.js, direct session reuse, and the initial extension scope. Codex assisted with protocol verification, architecture discussions, substantial implementation and test code, and documentation.
+I explored the portal in Chrome DevTools, collected response samples, and shaped the API around practical tasks such as meter lookup, filtering, and transformer inspection. I used an AI agent to challenge design choices, verify protocol assumptions, and assist with implementation, tests, and documentation. Throughout the process, I questioned recommendations, reviewed live responses, and refined the scope and authentication flow. This helped me evaluate the suggested solutions rather than accept them without understanding the trade-offs.
 
 ## Related work
 
-Around two years ago, I built [YahooApi](https://github.com/piyushs-05/YahooApi) using Python, Requests, Beautiful Soup, and Flask to collect Yahoo Finance data for a project that needed an API. It supported company search, stock details, historical prices, quotes, and company comparisons.
+Around two years ago, I built [YahooApi](https://github.com/piyushs-05/YahooApi) for a project that needed stock-market data. I first inspected Yahoo Finance to understand how the website displayed the required information, then used Python, Requests, and Beautiful Soup to extract it and built Flask endpoints for company search, stock details, historical prices, quotes, and comparisons.

@@ -199,6 +199,14 @@ export function createApp({
       await portal.nearbyMeters(req.sessionToken, query, req.portalSignal),
     );
   });
+  app.get("/api/v1/meters/summary", authenticate, async (req, res) => {
+    parseQuery(req.query);
+    sendResource(
+      req,
+      res,
+      await portal.metersSummary(req.sessionToken, req.portalSignal),
+    );
+  });
   app.get("/api/v1/meters/:meter_id", authenticate, async (req, res) => {
     const id = meterId(req.params.meter_id);
     parseQuery(req.query);
@@ -300,6 +308,7 @@ export function createApp({
     ["/api/v1/meters/export", "GET, HEAD"],
     ["/api/v1/meters/query", "GET, HEAD"],
     ["/api/v1/meters/nearby", "GET, HEAD"],
+    ["/api/v1/meters/summary", "GET, HEAD"],
     ["/api/v1/meters/:meter_id", "GET, HEAD"],
     ["/api/v1/meters/:meter_id/overview", "GET, HEAD"],
     ["/api/v1/meters/:meter_id/location", "GET, HEAD"],

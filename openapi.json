@@ -30,7 +30,7 @@
     },
     {
       "name": "Query",
-      "description": "Export-backed attribute filters and nearby search."
+      "description": "Export-backed attribute filters, nearby search, and fleet inventory summary."
     },
     {
       "name": "Transformers",
@@ -1728,6 +1728,132 @@
         "tags": [
           "Query"
         ]
+      }
+    },
+    "/api/v1/meters/summary": {
+      "get": {
+        "operationId": "summarizeMeters",
+        "tags": [
+          "Query"
+        ],
+        "summary": "Fleet inventory summary",
+        "description": "Fetches one signed export and counts meters by installation status, phase type, and manufacturer. Each breakdown sums to total_meters. Inventory only; not electrical health.",
+        "security": [
+          {
+            "UrjaSession": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MetersSummaryResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request ID",
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Failure: inspect error.code",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Failure: inspect error.code",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Failure: inspect error.code",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Failure: inspect error.code",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Malformed or incomplete upstream response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "SERVICE_BUSY, PORTAL_RATE_LIMITED, or PORTAL_UNAVAILABLE.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "Attempt or total operation deadline exceeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "Unsupported method",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/api/v1/meters/{meter_id}/overview": {
@@ -3949,6 +4075,143 @@
           },
           "meta": {
             "$ref": "#/components/schemas/Meta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ]
+      },
+      "MetersSummaryResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "object",
+            "properties": {
+              "total_meters": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "by_installation_status": {
+                "type": "object",
+                "properties": {
+                  "installed": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "faulty": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "decommissioned": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "unknown": {
+                    "type": "integer",
+                    "minimum": 0
+                  }
+                },
+                "required": [
+                  "installed",
+                  "faulty",
+                  "decommissioned",
+                  "unknown"
+                ]
+              },
+              "by_phase_type": {
+                "type": "object",
+                "properties": {
+                  "single": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "three": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "unknown": {
+                    "type": "integer",
+                    "minimum": 0
+                  }
+                },
+                "required": [
+                  "single",
+                  "three",
+                  "unknown"
+                ]
+              },
+              "by_manufacturer": {
+                "type": "object",
+                "additionalProperties": {
+                  "type": "integer",
+                  "minimum": 0
+                }
+              }
+            },
+            "required": [
+              "total_meters",
+              "by_installation_status",
+              "by_phase_type",
+              "by_manufacturer"
+            ]
+          },
+          "meta": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Meta"
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "source": {
+                    "const": "urja_portal"
+                  },
+                  "fetched_at": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "query_mode": {
+                    "const": "export_summary"
+                  },
+                  "snapshot_total": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "warnings": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "field": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "source_value": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "field",
+                        "message"
+                      ]
+                    }
+                  }
+                },
+                "required": [
+                  "source",
+                  "fetched_at",
+                  "query_mode",
+                  "snapshot_total"
+                ]
+              }
+            ]
           }
         },
         "required": [
