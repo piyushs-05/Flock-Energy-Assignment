@@ -964,7 +964,7 @@ Based on these observations, the decoder handles both formats and converts them 
 
 I would first add a short-lived cache for the validated meter export. Status filters, nearby search, and transformer summaries currently fetch the export separately on every request. Reusing a recent export would reduce repeated portal calls. The response would show when the data was fetched, and callers could request a refresh when needed. Cached data would still require a valid Urja session, with entries kept separate between sessions.
 
-I would also add a data-quality endpoint to help operations staff find records that need checking. It could list meters with missing coordinates or incomplete network details, and group conflicting transformer names under the same code. Each result would include the affected meter or transformer code and the reason it was flagged. Callers could filter by issue type and get a paginated list, instead of downloading the full export and finding these problems themselves. This would build on the source-data warnings already available in the API.
+I would then build a small UI combining inventory counts, meter overview, readings, and transformer data. A map would help users find nearby meters, filter them by installation status, and select a meter to see its details and transformer assignment. I would add a map endpoint that returns compact markers within the visible area, so the frontend does not need to download the full export.
 
 ### What mistake did you make while solving this?
 
