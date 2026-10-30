@@ -1,0 +1,3606 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Urja Meter API",
+    "version": "0.5.0",
+    "description": "Urja portal adapter: session login, meter search, nameplates, location and hierarchy, readings, and transformer listing. Protected calls use X-Urja-Session. Source data is fetched live; measurement timestamps may be old."
+  },
+  "servers": [
+    {
+      "url": "/"
+    }
+  ],
+  "paths": {
+    "/api/v1/auth/login": {
+      "post": {
+        "operationId": "login",
+        "summary": "Sign in using Urja credentials",
+        "description": "Five attempts per minute per IP; returns session only after a fresh cookie-only search succeeds.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoginResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request ID",
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Failure: inspect error.code",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Failure: inspect error.code",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Failure: inspect error.code",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "Unsupported method",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Failure: inspect error.code",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "Failure: inspect error.code",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Failure: inspect error.code",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Failure: inspect error.code",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Malformed, unsupported or oversized upstream response. Not retried.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "SERVICE_BUSY, PORTAL_RATE_LIMITED, or PORTAL_UNAVAILABLE. Eligible transient GET failures have at most one shared retry.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "headers": {
+              "Retry-After": {
+                "description": "For PORTAL_RATE_LIMITED, a valid upstream hint bounded to 1–60 seconds. Omitted for invalid hints.",
+                "schema": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 60
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "Attempt or total operation deadline exceeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/logout": {
+      "post": {
+        "operationId": "logout",
+        "summary": "Revoke the current Urja session",
+        "description": "Forwards the supplied Urja session cookie to the observed sign-out endpoint and succeeds only when Urja confirms logout and clears the session cookie. The session is not retried after an uncertain failure.",
+        "security": [
+          {
+            "UrjaSession": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Urja revoked the session",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LogoutResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid query parameters",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, expired, or rejected session",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Urja refused the operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "Unsupported method",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected internal failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Urja returned an invalid logout response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Urja could not be reached or is unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "Attempt or total operation deadline exceeded",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/meters": {
+      "get": {
+        "operationId": "searchMeters",
+        "summary": "Search meters",
+        "security": [
+          {
+            "UrjaSession": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "maxLength": 200,
+              "default": ""
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 1000000,
+              "default": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SearchResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request ID",
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Failure: inspect error.code",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Failure: inspect error.code",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Failure: inspect error.code",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "Unsupported method",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Failure: inspect error.code",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Malformed, unsupported or oversized upstream response. Not retried.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "SERVICE_BUSY, PORTAL_RATE_LIMITED, or PORTAL_UNAVAILABLE. Eligible transient GET failures have at most one shared retry.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "headers": {
+              "Retry-After": {
+                "description": "For PORTAL_RATE_LIMITED, a valid upstream hint bounded to 1–60 seconds. Omitted for invalid hints.",
+                "schema": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 60
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "Attempt or total operation deadline exceeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/meters/all": {
+      "get": {
+        "operationId": "searchAllMeters",
+        "summary": "Search meters across all pages",
+        "description": "Walks Urja search pagination for the given q and returns one combined list. Same row shape as paginated search. Rejects page and other unknown query parameters. Fails if totals drift between pages, IDs collide, or the result exceeds 10000 rows.",
+        "security": [
+          {
+            "UrjaSession": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "maxLength": 200,
+              "default": ""
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SearchAllResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request ID",
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Failure: inspect error.code",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Failure: inspect error.code",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Failure: inspect error.code",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "Unsupported method",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Failure: inspect error.code",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Malformed, incomplete, conflicting, or oversized combined search result.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "SERVICE_BUSY, PORTAL_RATE_LIMITED, or PORTAL_UNAVAILABLE. Eligible transient GET failures have at most one shared retry.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "headers": {
+              "Retry-After": {
+                "description": "For PORTAL_RATE_LIMITED, a valid upstream hint bounded to 1–60 seconds. Omitted for invalid hints.",
+                "schema": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 60
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "Attempt or total operation deadline exceeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/health": {
+      "get": {
+        "operationId": "health",
+        "summary": "Process liveness without a portal request",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "const": "ok"
+                    }
+                  },
+                  "required": ["status"]
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request ID",
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "Unsupported method",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/meters/{meter_id}": {
+      "get": {
+        "operationId": "getMeter",
+        "summary": "Get normalized meter nameplate",
+        "description": "Supports legacy parameter arrays and v2 classData. Identity conflicts and malformed source payloads return 502.",
+        "security": [
+          {
+            "UrjaSession": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "meter_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9_-]{1,64}$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NameplateResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request ID",
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid path or query",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid or changed session",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Access denied",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Meter does not exist",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "Unsupported method",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Malformed, unsupported or oversized upstream response. Not retried.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "SERVICE_BUSY, PORTAL_RATE_LIMITED, or PORTAL_UNAVAILABLE. Eligible transient GET failures have at most one shared retry.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "headers": {
+              "Retry-After": {
+                "description": "For PORTAL_RATE_LIMITED, a valid upstream hint bounded to 1–60 seconds. Omitted for invalid hints.",
+                "schema": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 60
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "Attempt or total operation deadline exceeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/meters/{meter_id}/location": {
+      "get": {
+        "operationId": "getMeterLocation",
+        "summary": "Get meter coordinates and hierarchy",
+        "description": "Fetches detail and geo sequentially. Preserves source hierarchy names; missing fields produce nulls and warnings. Composite data is not an atomic portal snapshot.",
+        "security": [
+          {
+            "UrjaSession": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "meter_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9_-]{1,64}$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LocationResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request ID",
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid path or query",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid or changed session",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Access denied",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Meter does not exist",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "Unsupported method",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Malformed, unsupported or oversized upstream response. Not retried.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "SERVICE_BUSY, PORTAL_RATE_LIMITED, or PORTAL_UNAVAILABLE. Eligible transient GET failures have at most one shared retry.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "headers": {
+              "Retry-After": {
+                "description": "For PORTAL_RATE_LIMITED, a valid upstream hint bounded to 1–60 seconds. Omitted for invalid hints.",
+                "schema": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 60
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "Attempt or total operation deadline exceeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/meters/{meter_id}/readings": {
+      "get": {
+        "operationId": "getMeterReadings",
+        "summary": "Get available readings with optional time filters",
+        "description": "Checks meter existence, fetches available readings once, then filters locally. Results are chronological and duplicates are preserved with warnings. Numeric energy values are source registers; no interval totals are calculated. available_from/to describe the entire source before filtering. Timezone is unknown; source data may be old.",
+        "security": [
+          {
+            "UrjaSession": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "meter_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9_-]{1,64}$"
+            }
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "description": "Inclusive boundary; from must be <= to.",
+            "schema": {
+              "$ref": "#/components/schemas/LocalTimestamp"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "description": "Inclusive boundary; from must be <= to.",
+            "schema": {
+              "$ref": "#/components/schemas/LocalTimestamp"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReadingsResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request ID",
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid path or query",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid or changed session",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Access denied",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Meter does not exist",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "Unsupported method",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Malformed, unsupported or oversized upstream response. Not retried.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "SERVICE_BUSY, PORTAL_RATE_LIMITED, or PORTAL_UNAVAILABLE. Eligible transient GET failures have at most one shared retry.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "headers": {
+              "Retry-After": {
+                "description": "For PORTAL_RATE_LIMITED, a valid upstream hint bounded to 1–60 seconds. Omitted for invalid hints.",
+                "schema": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 60
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "Attempt or total operation deadline exceeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/transformers": {
+      "get": {
+        "operationId": "listTransformers",
+        "summary": "List transformers",
+        "description": "Preserves source page size and names. Feeder codes may repeat across transformers.",
+        "security": [
+          {
+            "UrjaSession": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 1000000,
+              "default": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TransformersResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request ID",
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid path or query",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid or changed session",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Access denied",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "Unsupported method",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Malformed, unsupported or oversized upstream response. Not retried.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "SERVICE_BUSY, PORTAL_RATE_LIMITED, or PORTAL_UNAVAILABLE. Eligible transient GET failures have at most one shared retry.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "headers": {
+              "Retry-After": {
+                "description": "For PORTAL_RATE_LIMITED, a valid upstream hint bounded to 1–60 seconds. Omitted for invalid hints.",
+                "schema": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 60
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "Attempt or total operation deadline exceeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/meters/export": {
+      "get": {
+        "operationId": "exportMeters",
+        "summary": "Export all meter metadata and locations",
+        "description": "Authenticated server-side signed bulk retrieval. No query parameters. Complete normalized snapshot or error; excludes reading time series. Preserves hierarchy aliases. No signing material exposed or persisted. Upstream limit 5 MiB and 10000 rows.",
+        "security": [
+          {
+            "UrjaSession": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExportResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request ID",
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Failure: inspect error.code",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Failure: inspect error.code",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Failure: inspect error.code",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "Unsupported method",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Failure: inspect error.code",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Malformed/incomplete export, conflicting identities, response exceeding 5 MiB decompressed, or more than 10000 rows.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "SERVICE_BUSY, PORTAL_RATE_LIMITED, or PORTAL_UNAVAILABLE. Eligible transient GET failures have at most one shared retry.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "headers": {
+              "Retry-After": {
+                "description": "For PORTAL_RATE_LIMITED, a valid upstream hint bounded to 1–60 seconds. Omitted for invalid hints.",
+                "schema": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 60
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "Attempt or total operation deadline exceeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/meters/query": {
+      "get": {
+        "operationId": "queryMeters",
+        "summary": "Filter meters by attributes",
+        "description": "Fetches a signed export once, then filters locally with AND semantics. At least one filter is required. Results are paginated locally. meta.query_mode is export_filter.",
+        "security": [
+          {
+            "UrjaSession": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": ["installed", "faulty", "decommissioned", "unknown"]
+            }
+          },
+          {
+            "name": "phase_type",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": ["single", "three", "unknown"]
+            }
+          },
+          {
+            "name": "transformer_code",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "manufacturer",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "maxLength": 200
+            }
+          },
+          {
+            "name": "installation_type",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": ["ct_operated", "whole_current", "unknown"]
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 1000000,
+              "default": 1
+            }
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MeterQueryResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request ID",
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Failure: inspect error.code",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Failure: inspect error.code",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Failure: inspect error.code",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "Unsupported method",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Failure: inspect error.code",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Malformed or oversized export used as query source.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "SERVICE_BUSY, PORTAL_RATE_LIMITED, or PORTAL_UNAVAILABLE.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "headers": {
+              "Retry-After": {
+                "description": "Bounded 1-60 seconds when valid.",
+                "schema": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 60
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "Attempt or total operation deadline exceeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/meters/nearby": {
+      "get": {
+        "operationId": "nearbyMeters",
+        "summary": "Find meters near a point",
+        "description": "Fetches a signed export once, computes great-circle distance, returns meters within radius_m sorted nearest first. Meters without coordinates are excluded and counted.",
+        "security": [
+          {
+            "UrjaSession": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "latitude",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "number",
+              "minimum": -90,
+              "maximum": 90
+            }
+          },
+          {
+            "name": "longitude",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "number",
+              "minimum": -180,
+              "maximum": 180
+            }
+          },
+          {
+            "name": "radius_m",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 50000,
+              "default": 1000
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200,
+              "default": 50
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MeterNearbyResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request ID",
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Failure: inspect error.code",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Failure: inspect error.code",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Failure: inspect error.code",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "Unsupported method",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Failure: inspect error.code",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Malformed or oversized export used as query source.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "SERVICE_BUSY, PORTAL_RATE_LIMITED, or PORTAL_UNAVAILABLE.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "headers": {
+              "Retry-After": {
+                "description": "Bounded 1-60 seconds when valid.",
+                "schema": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 60
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "Attempt or total operation deadline exceeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/meters/{meter_id}/overview": {
+      "get": {
+        "operationId": "getMeterOverview",
+        "summary": "Combined meter overview",
+        "description": "Fetches detail, geo, and energy once each on a shared client. Not an atomic snapshot. latest_readings includes every reading at the latest timestamp.",
+        "security": [
+          {
+            "UrjaSession": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "meter_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9_-]{1,64}$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MeterOverviewResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request ID",
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Failure: inspect error.code",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Failure: inspect error.code",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Failure: inspect error.code",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Meter or transformer not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "Unsupported method",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Failure: inspect error.code",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Malformed or incomplete upstream response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "SERVICE_BUSY, PORTAL_RATE_LIMITED, or PORTAL_UNAVAILABLE.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "Attempt or total operation deadline exceeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/transformers/{transformer_code}/meters": {
+      "get": {
+        "operationId": "listTransformerMeters",
+        "summary": "Meters under a transformer",
+        "description": "Export-backed assignment list. Optional status filter. Path sets transformer_code; query transformer_code is rejected.",
+        "security": [
+          {
+            "UrjaSession": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "transformer_code",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9_-]{1,64}$"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": ["installed", "faulty", "decommissioned", "unknown"]
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1
+            }
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TransformerMetersResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request ID",
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Failure: inspect error.code",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Failure: inspect error.code",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Failure: inspect error.code",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Meter or transformer not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "Unsupported method",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Failure: inspect error.code",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Malformed or incomplete upstream response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "SERVICE_BUSY, PORTAL_RATE_LIMITED, or PORTAL_UNAVAILABLE.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "Attempt or total operation deadline exceeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/transformers/{transformer_code}/summary": {
+      "get": {
+        "operationId": "getTransformerSummary",
+        "summary": "Transformer inventory summary",
+        "description": "Counts meters by installation status and phase for one transformer. Inventory only.",
+        "security": [
+          {
+            "UrjaSession": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "transformer_code",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9_-]{1,64}$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TransformerSummaryResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request ID",
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Failure: inspect error.code",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Failure: inspect error.code",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Failure: inspect error.code",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Meter or transformer not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "Unsupported method",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Failure: inspect error.code",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Malformed or incomplete upstream response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "SERVICE_BUSY, PORTAL_RATE_LIMITED, or PORTAL_UNAVAILABLE.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "Attempt or total operation deadline exceeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "UrjaSession": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-Urja-Session",
+        "description": "Urja session cookie value returned by login. Send the raw value without a Bearer prefix."
+      }
+    },
+    "schemas": {
+      "Meta": {
+        "type": "object",
+        "properties": {
+          "request_id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": ["request_id"]
+      },
+      "Error": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "object",
+            "properties": {
+              "code": {
+                "type": "string"
+              },
+              "message": {
+                "type": "string"
+              }
+            },
+            "required": ["code", "message"]
+          },
+          "meta": {
+            "$ref": "#/components/schemas/Meta"
+          }
+        },
+        "required": ["error", "meta"]
+      },
+      "LoginInput": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email",
+            "maxLength": 254
+          },
+          "password": {
+            "type": "string",
+            "format": "password",
+            "minLength": 1,
+            "maxLength": 1024,
+            "writeOnly": true
+          }
+        },
+        "required": ["email", "password"],
+        "additionalProperties": false
+      },
+      "LoginResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "object",
+            "properties": {
+              "session_token": {
+                "type": "string",
+                "description": "Sensitive Urja session cookie value."
+              },
+              "expires_at": {
+                "type": ["string", "null"],
+                "format": "date-time"
+              }
+            },
+            "required": ["session_token", "expires_at"]
+          },
+          "meta": {
+            "$ref": "#/components/schemas/Meta"
+          }
+        },
+        "required": ["data", "meta"]
+      },
+      "Meter": {
+        "type": "object",
+        "properties": {
+          "meter_id": {
+            "type": "string"
+          },
+          "serial_number": {
+            "type": "string"
+          },
+          "manufacturer": {
+            "type": "string"
+          },
+          "phase_type": {
+            "type": "string",
+            "enum": ["single", "three", "unknown"]
+          },
+          "installation_status": {
+            "type": "string",
+            "enum": ["installed", "faulty", "decommissioned", "unknown"]
+          },
+          "transformer_code": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "meter_id",
+          "serial_number",
+          "manufacturer",
+          "phase_type",
+          "installation_status",
+          "transformer_code"
+        ]
+      },
+      "SearchResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Meter"
+            }
+          },
+          "meta": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Meta"
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "source": {
+                    "const": "urja_portal"
+                  },
+                  "fetched_at": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "page": {
+                    "type": "integer",
+                    "minimum": 1
+                  },
+                  "page_size": {
+                    "type": "integer",
+                    "minimum": 1
+                  },
+                  "total": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "total_pages": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "warnings": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "field": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "source_value": {
+                          "type": "string"
+                        }
+                      },
+                      "required": ["code", "field", "message"]
+                    }
+                  }
+                },
+                "required": [
+                  "source",
+                  "fetched_at",
+                  "page",
+                  "page_size",
+                  "total",
+                  "total_pages"
+                ]
+              }
+            ]
+          }
+        },
+        "required": ["data", "meta"]
+      },
+      "SearchAllResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Meter"
+            }
+          },
+          "meta": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Meta"
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "source": {
+                    "const": "urja_portal"
+                  },
+                  "fetched_at": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "total": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "returned_count": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "page_size": {
+                    "type": "integer",
+                    "minimum": 1
+                  },
+                  "pages_fetched": {
+                    "type": "integer",
+                    "minimum": 1
+                  },
+                  "warnings": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "field": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "source_value": {
+                          "type": "string"
+                        }
+                      },
+                      "required": ["code", "field", "message"]
+                    }
+                  }
+                },
+                "required": [
+                  "source",
+                  "fetched_at",
+                  "total",
+                  "returned_count",
+                  "page_size",
+                  "pages_fetched"
+                ]
+              }
+            ]
+          }
+        },
+        "required": ["data", "meta"]
+      },
+      "Nameplate": {
+        "type": "object",
+        "properties": {
+          "meter_id": {
+            "type": "string"
+          },
+          "serial_number": {
+            "type": "string"
+          },
+          "manufacturer": {
+            "type": "string"
+          },
+          "phase_type": {
+            "type": "string",
+            "enum": ["single", "three", "unknown"]
+          },
+          "installation_status": {
+            "type": "string",
+            "enum": ["installed", "faulty", "decommissioned", "unknown"]
+          },
+          "installation_type": {
+            "type": "string",
+            "enum": ["ct_operated", "whole_current", "unknown"]
+          }
+        },
+        "required": [
+          "meter_id",
+          "serial_number",
+          "manufacturer",
+          "phase_type",
+          "installation_status",
+          "installation_type"
+        ]
+      },
+      "NameplateResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/Nameplate"
+          },
+          "meta": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Meta"
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "source": {
+                    "const": "urja_portal"
+                  },
+                  "fetched_at": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "warnings": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "field": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "source_value": {
+                          "type": "string"
+                        }
+                      },
+                      "required": ["code", "field", "message"]
+                    }
+                  }
+                },
+                "required": ["source", "fetched_at"]
+              }
+            ]
+          }
+        },
+        "required": ["data", "meta"]
+      },
+      "HierarchyEntry": {
+        "oneOf": [
+          {
+            "type": "null"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "code": {
+                "type": ["string", "null"]
+              }
+            },
+            "required": ["name", "code"]
+          }
+        ]
+      },
+      "Location": {
+        "type": "object",
+        "properties": {
+          "meter_id": {
+            "type": "string"
+          },
+          "coordinates": {
+            "type": "object",
+            "properties": {
+              "latitude": {
+                "type": ["number", "null"],
+                "minimum": -90,
+                "maximum": 90
+              },
+              "longitude": {
+                "type": ["number", "null"],
+                "minimum": -180,
+                "maximum": 180
+              }
+            },
+            "required": ["latitude", "longitude"]
+          },
+          "hierarchy": {
+            "type": "object",
+            "properties": {
+              "zone": {
+                "$ref": "#/components/schemas/HierarchyEntry"
+              },
+              "circle": {
+                "$ref": "#/components/schemas/HierarchyEntry"
+              },
+              "division": {
+                "$ref": "#/components/schemas/HierarchyEntry"
+              },
+              "subdivision": {
+                "$ref": "#/components/schemas/HierarchyEntry"
+              },
+              "substation": {
+                "$ref": "#/components/schemas/HierarchyEntry"
+              },
+              "feeder": {
+                "$ref": "#/components/schemas/HierarchyEntry"
+              },
+              "transformer": {
+                "$ref": "#/components/schemas/HierarchyEntry"
+              }
+            },
+            "required": [
+              "zone",
+              "circle",
+              "division",
+              "subdivision",
+              "substation",
+              "feeder",
+              "transformer"
+            ]
+          }
+        },
+        "required": ["meter_id", "coordinates", "hierarchy"]
+      },
+      "LocationResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/Location"
+          },
+          "meta": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Meta"
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "source": {
+                    "const": "urja_portal"
+                  },
+                  "fetched_at": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "warnings": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "field": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "source_value": {
+                          "type": "string"
+                        }
+                      },
+                      "required": ["code", "field", "message"]
+                    }
+                  }
+                },
+                "required": ["source", "fetched_at"]
+              }
+            ]
+          }
+        },
+        "required": ["data", "meta"]
+      },
+      "LocalTimestamp": {
+        "type": "string",
+        "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}$",
+        "description": "Calendar-valid local timestamp. Timezone is unknown; no Z or offset is accepted.",
+        "example": "2026-06-24T00:00:00"
+      },
+      "Reading": {
+        "type": "object",
+        "properties": {
+          "timestamp": {
+            "$ref": "#/components/schemas/LocalTimestamp"
+          },
+          "active_energy_kwh": {
+            "type": "number"
+          },
+          "apparent_energy_kvah": {
+            "type": "number"
+          },
+          "voltage_r_v": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "timestamp",
+          "active_energy_kwh",
+          "apparent_energy_kvah",
+          "voltage_r_v"
+        ]
+      },
+      "ReadingsResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Reading"
+            }
+          },
+          "meta": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Meta"
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "source": {
+                    "const": "urja_portal"
+                  },
+                  "fetched_at": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "warnings": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "field": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "source_value": {
+                          "type": "string"
+                        }
+                      },
+                      "required": ["code", "field", "message"]
+                    }
+                  },
+                  "meter_id": {
+                    "type": "string"
+                  },
+                  "timestamp_timezone": {
+                    "type": "null"
+                  },
+                  "available_from": {
+                    "oneOf": [
+                      {
+                        "$ref": "#/components/schemas/LocalTimestamp"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "available_to": {
+                    "oneOf": [
+                      {
+                        "$ref": "#/components/schemas/LocalTimestamp"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "returned_count": {
+                    "type": "integer",
+                    "minimum": 0
+                  }
+                },
+                "required": [
+                  "source",
+                  "fetched_at",
+                  "meter_id",
+                  "timestamp_timezone",
+                  "available_from",
+                  "available_to",
+                  "returned_count"
+                ]
+              }
+            ]
+          }
+        },
+        "required": ["data", "meta"]
+      },
+      "Transformer": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "feeder_code": {
+            "type": "string"
+          },
+          "capacity_kva": {
+            "type": "number",
+            "minimum": 0
+          }
+        },
+        "required": ["code", "name", "feeder_code", "capacity_kva"]
+      },
+      "TransformersResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Transformer"
+            }
+          },
+          "meta": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Meta"
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "source": {
+                    "const": "urja_portal"
+                  },
+                  "fetched_at": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "warnings": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "field": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "source_value": {
+                          "type": "string"
+                        }
+                      },
+                      "required": ["code", "field", "message"]
+                    }
+                  },
+                  "page": {
+                    "type": "integer",
+                    "minimum": 1
+                  },
+                  "page_size": {
+                    "type": "integer",
+                    "minimum": 1
+                  },
+                  "total": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "total_pages": {
+                    "type": "integer",
+                    "minimum": 0
+                  }
+                },
+                "required": [
+                  "source",
+                  "fetched_at",
+                  "page",
+                  "page_size",
+                  "total",
+                  "total_pages"
+                ]
+              }
+            ]
+          }
+        },
+        "required": ["data", "meta"]
+      },
+      "ExportMeter": {
+        "type": "object",
+        "required": [
+          "meter_id",
+          "serial_number",
+          "manufacturer",
+          "phase_type",
+          "installation_status",
+          "installation_type",
+          "transformer_code",
+          "coordinates",
+          "hierarchy"
+        ],
+        "properties": {
+          "meter_id": {
+            "type": "string"
+          },
+          "serial_number": {
+            "type": "string"
+          },
+          "manufacturer": {
+            "type": "string"
+          },
+          "phase_type": {
+            "type": "string",
+            "enum": ["single", "three", "unknown"]
+          },
+          "installation_status": {
+            "type": "string",
+            "enum": ["installed", "faulty", "decommissioned", "unknown"]
+          },
+          "installation_type": {
+            "type": "string",
+            "enum": ["ct_operated", "whole_current", "unknown"]
+          },
+          "transformer_code": {
+            "type": "string"
+          },
+          "coordinates": {
+            "type": "object",
+            "properties": {
+              "latitude": {
+                "type": ["number", "null"],
+                "minimum": -90,
+                "maximum": 90
+              },
+              "longitude": {
+                "type": ["number", "null"],
+                "minimum": -180,
+                "maximum": 180
+              }
+            },
+            "required": ["latitude", "longitude"]
+          },
+          "hierarchy": {
+            "type": "object",
+            "properties": {
+              "zone": {
+                "$ref": "#/components/schemas/HierarchyEntry"
+              },
+              "circle": {
+                "$ref": "#/components/schemas/HierarchyEntry"
+              },
+              "division": {
+                "$ref": "#/components/schemas/HierarchyEntry"
+              },
+              "subdivision": {
+                "$ref": "#/components/schemas/HierarchyEntry"
+              },
+              "substation": {
+                "$ref": "#/components/schemas/HierarchyEntry"
+              },
+              "feeder": {
+                "$ref": "#/components/schemas/HierarchyEntry"
+              },
+              "transformer": {
+                "$ref": "#/components/schemas/HierarchyEntry"
+              }
+            },
+            "required": [
+              "zone",
+              "circle",
+              "division",
+              "subdivision",
+              "substation",
+              "feeder",
+              "transformer"
+            ]
+          }
+        }
+      },
+      "ExportResponse": {
+        "type": "object",
+        "required": ["data", "meta"],
+        "properties": {
+          "data": {
+            "type": "array",
+            "maxItems": 10000,
+            "items": {
+              "$ref": "#/components/schemas/ExportMeter"
+            }
+          },
+          "meta": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Meta"
+              },
+              {
+                "type": "object",
+                "required": ["source", "fetched_at", "total", "returned_count"],
+                "properties": {
+                  "source": {
+                    "const": "urja_portal"
+                  },
+                  "fetched_at": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "total": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "returned_count": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "warnings": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "required": ["code", "field", "message"],
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "field": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "source_value": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      },
+      "MeterQueryItem": {
+        "type": "object",
+        "properties": {
+          "meter_id": {
+            "type": "string"
+          },
+          "serial_number": {
+            "type": "string"
+          },
+          "manufacturer": {
+            "type": "string"
+          },
+          "phase_type": {
+            "type": "string",
+            "enum": ["single", "three", "unknown"]
+          },
+          "installation_status": {
+            "type": "string",
+            "enum": ["installed", "faulty", "decommissioned", "unknown"]
+          },
+          "installation_type": {
+            "type": "string",
+            "enum": ["ct_operated", "whole_current", "unknown"]
+          },
+          "transformer_code": {
+            "type": "string"
+          },
+          "coordinates": {
+            "type": "object",
+            "properties": {
+              "latitude": {
+                "type": ["number", "null"]
+              },
+              "longitude": {
+                "type": ["number", "null"]
+              }
+            },
+            "required": ["latitude", "longitude"]
+          }
+        },
+        "required": [
+          "meter_id",
+          "serial_number",
+          "manufacturer",
+          "phase_type",
+          "installation_status",
+          "installation_type",
+          "transformer_code",
+          "coordinates"
+        ]
+      },
+      "MeterNearbyItem": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/MeterQueryItem"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "distance_m": {
+                "type": "number",
+                "minimum": 0
+              }
+            },
+            "required": ["distance_m"]
+          }
+        ]
+      },
+      "MeterQueryResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MeterQueryItem"
+            }
+          },
+          "meta": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Meta"
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "source": {
+                    "const": "urja_portal"
+                  },
+                  "fetched_at": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "query_mode": {
+                    "const": "export_filter"
+                  },
+                  "snapshot_total": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "matched_total": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "page": {
+                    "type": "integer",
+                    "minimum": 1
+                  },
+                  "page_size": {
+                    "type": "integer",
+                    "minimum": 1
+                  },
+                  "total_pages": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "filters": {
+                    "type": "object",
+                    "additionalProperties": {
+                      "type": "string"
+                    }
+                  },
+                  "warnings": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "field": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "source_value": {
+                          "type": "string"
+                        }
+                      },
+                      "required": ["code", "field", "message"]
+                    }
+                  }
+                },
+                "required": [
+                  "source",
+                  "fetched_at",
+                  "query_mode",
+                  "snapshot_total",
+                  "matched_total",
+                  "page",
+                  "page_size",
+                  "total_pages",
+                  "filters"
+                ]
+              }
+            ]
+          }
+        },
+        "required": ["data", "meta"]
+      },
+      "MeterNearbyResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MeterNearbyItem"
+            }
+          },
+          "meta": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Meta"
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "source": {
+                    "const": "urja_portal"
+                  },
+                  "fetched_at": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "query_mode": {
+                    "const": "export_nearby"
+                  },
+                  "snapshot_total": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "latitude": {
+                    "type": "number"
+                  },
+                  "longitude": {
+                    "type": "number"
+                  },
+                  "radius_m": {
+                    "type": "integer",
+                    "minimum": 1
+                  },
+                  "limit": {
+                    "type": "integer",
+                    "minimum": 1
+                  },
+                  "matched_within_radius": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "returned_count": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "excluded_missing_coordinates": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "warnings": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "field": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "source_value": {
+                          "type": "string"
+                        }
+                      },
+                      "required": ["code", "field", "message"]
+                    }
+                  }
+                },
+                "required": [
+                  "source",
+                  "fetched_at",
+                  "query_mode",
+                  "snapshot_total",
+                  "latitude",
+                  "longitude",
+                  "radius_m",
+                  "limit",
+                  "matched_within_radius",
+                  "returned_count",
+                  "excluded_missing_coordinates"
+                ]
+              }
+            ]
+          }
+        },
+        "required": ["data", "meta"]
+      },
+      "MeterOverviewResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "object",
+            "properties": {
+              "meter_id": {
+                "type": "string"
+              },
+              "nameplate": {
+                "type": "object",
+                "properties": {
+                  "serial_number": {
+                    "type": "string"
+                  },
+                  "manufacturer": {
+                    "type": "string"
+                  },
+                  "phase_type": {
+                    "type": "string",
+                    "enum": ["single", "three", "unknown"]
+                  },
+                  "installation_status": {
+                    "type": "string",
+                    "enum": ["installed", "faulty", "decommissioned", "unknown"]
+                  },
+                  "installation_type": {
+                    "type": "string",
+                    "enum": ["ct_operated", "whole_current", "unknown"]
+                  }
+                },
+                "required": [
+                  "serial_number",
+                  "manufacturer",
+                  "phase_type",
+                  "installation_status",
+                  "installation_type"
+                ]
+              },
+              "location": {
+                "type": "object",
+                "properties": {
+                  "coordinates": {
+                    "type": "object",
+                    "properties": {
+                      "latitude": {
+                        "type": ["number", "null"]
+                      },
+                      "longitude": {
+                        "type": ["number", "null"]
+                      }
+                    },
+                    "required": ["latitude", "longitude"]
+                  },
+                  "hierarchy": {
+                    "type": "object",
+                    "additionalProperties": true
+                  }
+                },
+                "required": ["coordinates", "hierarchy"]
+              },
+              "readings_summary": {
+                "type": "object",
+                "properties": {
+                  "available_from": {
+                    "type": ["string", "null"]
+                  },
+                  "available_to": {
+                    "type": ["string", "null"]
+                  },
+                  "reading_count": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "timestamp_timezone": {
+                    "type": ["string", "null"]
+                  },
+                  "latest_readings": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "timestamp": {
+                          "type": "string"
+                        },
+                        "active_energy_kwh": {
+                          "type": "number"
+                        },
+                        "apparent_energy_kvah": {
+                          "type": "number"
+                        },
+                        "voltage_r_v": {
+                          "type": "number"
+                        }
+                      },
+                      "required": [
+                        "timestamp",
+                        "active_energy_kwh",
+                        "apparent_energy_kvah",
+                        "voltage_r_v"
+                      ]
+                    }
+                  }
+                },
+                "required": [
+                  "available_from",
+                  "available_to",
+                  "reading_count",
+                  "timestamp_timezone",
+                  "latest_readings"
+                ]
+              }
+            },
+            "required": [
+              "meter_id",
+              "nameplate",
+              "location",
+              "readings_summary"
+            ]
+          },
+          "meta": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Meta"
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "source": {
+                    "const": "urja_portal"
+                  },
+                  "fetched_at": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "composite": {
+                    "const": true
+                  },
+                  "note": {
+                    "type": "string"
+                  },
+                  "warnings": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "field": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "source_value": {
+                          "type": "string"
+                        }
+                      },
+                      "required": ["code", "field", "message"]
+                    }
+                  }
+                },
+                "required": ["source", "fetched_at", "composite"]
+              }
+            ]
+          }
+        },
+        "required": ["data", "meta"]
+      },
+      "TransformerMetersResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MeterQueryItem"
+            }
+          },
+          "meta": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Meta"
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "source": {
+                    "const": "urja_portal"
+                  },
+                  "fetched_at": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "query_mode": {
+                    "const": "transformer_meters"
+                  },
+                  "transformer_code": {
+                    "type": "string"
+                  },
+                  "snapshot_total": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "assigned_total": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "matched_total": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "page": {
+                    "type": "integer",
+                    "minimum": 1
+                  },
+                  "page_size": {
+                    "type": "integer",
+                    "minimum": 1
+                  },
+                  "total_pages": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "filters": {
+                    "type": "object",
+                    "additionalProperties": {
+                      "type": "string"
+                    }
+                  },
+                  "warnings": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "field": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "source_value": {
+                          "type": "string"
+                        }
+                      },
+                      "required": ["code", "field", "message"]
+                    }
+                  }
+                },
+                "required": [
+                  "source",
+                  "fetched_at",
+                  "query_mode",
+                  "transformer_code",
+                  "snapshot_total",
+                  "assigned_total",
+                  "matched_total",
+                  "page",
+                  "page_size",
+                  "total_pages",
+                  "filters"
+                ]
+              }
+            ]
+          }
+        },
+        "required": ["data", "meta"]
+      },
+      "TransformerSummaryResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "object",
+            "properties": {
+              "transformer_code": {
+                "type": "string"
+              },
+              "total_meters": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "by_installation_status": {
+                "type": "object",
+                "properties": {
+                  "installed": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "faulty": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "decommissioned": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "unknown": {
+                    "type": "integer",
+                    "minimum": 0
+                  }
+                },
+                "required": ["installed", "faulty", "decommissioned", "unknown"]
+              },
+              "by_phase_type": {
+                "type": "object",
+                "properties": {
+                  "single": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "three": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "unknown": {
+                    "type": "integer",
+                    "minimum": 0
+                  }
+                },
+                "required": ["single", "three", "unknown"]
+              }
+            },
+            "required": [
+              "transformer_code",
+              "total_meters",
+              "by_installation_status",
+              "by_phase_type"
+            ]
+          },
+          "meta": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Meta"
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "source": {
+                    "const": "urja_portal"
+                  },
+                  "fetched_at": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "query_mode": {
+                    "const": "transformer_summary"
+                  },
+                  "transformer_code": {
+                    "type": "string"
+                  },
+                  "snapshot_total": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "assigned_total": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "warnings": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "field": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "source_value": {
+                          "type": "string"
+                        }
+                      },
+                      "required": ["code", "field", "message"]
+                    }
+                  }
+                },
+                "required": [
+                  "source",
+                  "fetched_at",
+                  "query_mode",
+                  "transformer_code",
+                  "snapshot_total",
+                  "assigned_total"
+                ]
+              }
+            ]
+          }
+        },
+        "required": ["data", "meta"]
+      },
+      "LogoutResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "object",
+            "properties": {
+              "logged_out": {
+                "type": "boolean",
+                "const": true
+              }
+            },
+            "required": ["logged_out"]
+          },
+          "meta": {
+            "$ref": "#/components/schemas/Meta"
+          }
+        },
+        "required": ["data", "meta"]
+      }
+    }
+  }
+}
