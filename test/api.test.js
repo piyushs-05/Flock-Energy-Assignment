@@ -304,6 +304,11 @@ test("health and docs are public; invalid configuration fails closed", async (t)
   assert.equal(seen.length, 0);
   assert.throws(() => readConfig({ PORTAL_ORIGIN: "http://example.com" }));
   assert.throws(() => readConfig({ PORT: "bad" }));
+  assert.equal(readConfig({}).HOST, "127.0.0.1");
+  assert.equal(readConfig({}).TRUST_PROXY, false);
+  assert.equal(readConfig({ RENDER: "true", PORT: "10000" }).HOST, "0.0.0.0");
+  assert.equal(readConfig({ RENDER: "true" }).TRUST_PROXY, true);
+  assert.equal(readConfig({ RENDER: "true", HOST: "127.0.0.1" }).HOST, "127.0.0.1");
 });
 
 test("meters/all walks pages, combines rows, and rejects page query", async (t) => {

@@ -19,9 +19,10 @@ const server = createApp({
   portal,
   logger,
   timeoutMs: config.REQUEST_TIMEOUT_MS,
+  trustProxy: config.TRUST_PROXY,
 }).listen(config.PORT, config.HOST, () =>
   logger.info(
-    { host: config.HOST, port: config.PORT },
+    { host: config.HOST, port: config.PORT, trust_proxy: config.TRUST_PROXY },
     "Urja Meter API listening",
   ),
 );

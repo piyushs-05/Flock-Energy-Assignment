@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 const schema = z.object({
-  HOST: z.string().min(1).default("127.0.0.1"),
+  HOST: z.string().min(1),
   PORT: z.coerce.number().int().min(1).max(65535).default(3000),
   PORTAL_ORIGIN: z
     .url()
@@ -29,10 +29,25 @@ const schema = z.object({
   LOG_LEVEL: z
     .enum(["fatal", "error", "warn", "info", "debug", "trace", "silent"])
     .default("info"),
+  /** True on Render (and similar) so Express trusts X-Forwarded-* for rate limits. */
+  TRUST_PROXY: z.boolean().default(false),
 });
 
+/** Local stays on loopback; Render sets RENDER and PORT — bind all interfaces there. */
+export function defaultHost(env = process.env) {
+  if (env.HOST) return env.HOST;
+  return env.RENDER ? "0.0.0.0" : "127.0.0.1";
+}
+
 export function readConfig(env = process.env) {
-  const parsed = schema.safeParse(env);
+  const parsed = schema.safeParse({
+    ...env,
+    HOST: defaultHost(env),
+    TRUST_PROXY:
+      env.TRUST_PROXY !== undefined
+        ? ["1", "true", "yes"].includes(String(env.TRUST_PROXY).toLowerCase())
+        : Boolean(env.RENDER),
+  });
   if (!parsed.success)
     throw new Error(
       `Invalid configuration fields: ${parsed.error.issues.map((issue) => issue.path.join(".")).join(", ")}`,

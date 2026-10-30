@@ -59,10 +59,11 @@ export function createApp({
   logger,
   timeoutMs = 30000,
   loginLimit = 5,
+  trustProxy = false,
 }) {
   const app = express();
   app.disable("x-powered-by");
-  app.set("trust proxy", false);
+  app.set("trust proxy", trustProxy ? 1 : false);
   app.use((req, res, next) => {
     req.requestId = randomUUID();
     res.setHeader("X-Request-ID", req.requestId);

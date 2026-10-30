@@ -794,8 +794,9 @@ Our login throttle is `429`. Urja rate-limiting the portal is `503 PORTAL_RATE_L
 
 | Variable | Default | Purpose |
 | --- | --- | --- |
-| `HOST` | `127.0.0.1` | Bind address |
+| `HOST` | `127.0.0.1` locally; `0.0.0.0` when `server` is set | Bind address |
 | `PORT` | `3000` | HTTP port |
+| `TRUST_PROXY` | `false` locally; `true` on Render | Trust `X-Forwarded-*` (login rate limit) |
 | `PORTAL_ORIGIN` | `https://urja-ops.flockenergy.tech` | HTTPS origin only (no path, query, or embedded credentials) |
 | `REQUEST_TIMEOUT_MS` | `30000` | Whole API operation deadline (100–120000) |
 | `PORTAL_TIMEOUT_MS` | `10000` | One portal attempt (100–30000) |
@@ -803,7 +804,7 @@ Our login throttle is `429`. Urja rate-limiting the portal is `503 PORTAL_RATE_L
 | `PORTAL_MAX_QUEUE` | `20` | Waiting portal requests (0–100) |
 | `LOG_LEVEL` | `info` | `fatal` … `silent` |
 
-Invalid values fail startup with a configuration error.
+Invalid values fail startup with a configuration error. On Render you usually only need the repo connected — leave `HOST` unset so it binds `0.0.0.0` and uses Render's `PORT`.
 
 ## Testing
 
@@ -874,7 +875,7 @@ openapi.json                    # API contract
 - Long-running session expiry, concurrent logins for one account, multi-session logout scope, signing-key rotation, and signature timestamp tolerance are only lightly checked. Offline mocks do not replace those portal lifecycle checks.
 - Export `page=1` returned the full dataset in testing. The API checks completeness and does **not** invent further export pages. Larger datasets may need streaming or real pagination only after the portal is shown to support them.
 - Queue and login limits are **per process**. Several instances would need shared throttling.
-- Default bind is loopback. Public hosting would need HTTPS, a deployment auth review, and an explicit CORS policy (CORS alone is not access control).
+- Local bind defaults to loopback; Render (`RENDER` set) binds `0.0.0.0`. Public hosting still needs HTTPS (Render provides it), a deployment auth review, and an explicit CORS policy if browsers on other origins call the API (CORS alone is not access control).
 - Attribute filters and nearby search already run on a **fresh export in memory**. There is still no durable local index, response cache, global hierarchy tree, or product UI — Swagger documents the API; it is not a meter dashboard.
 - Readings keep source registers and an unknown timezone. Interval / billable energy is out of scope until cumulative-register rules are defined.
 
